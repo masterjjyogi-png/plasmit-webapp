@@ -89,7 +89,7 @@ export function NursingQuickNav() {
         const Icon = item.icon;
         const active = pathname === item.href;
         return (
-          <Link className={cn("rounded-lg border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-muted", active && "border-primary bg-primary text-primary-foreground hover:brightness-95")} href={item.href} key={item.href}>
+          <Link className={cn("rounded-lg border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-muted", active && "border-primary bg-primary text-primary-foreground hover:bg-primary hover:brightness-95")} href={item.href} key={item.href}>
             <Icon className={cn("mb-3 h-5 w-5 text-muted-foreground", active && "text-white")} />
             <div className="text-sm font-semibold">{item.label}</div>
             <div className={cn("mt-1 text-xs text-muted-foreground", active && "text-white/75")}>Open reusable nursing workspace</div>
@@ -113,7 +113,7 @@ function NursingSectionNav() {
       {items.map((item) => {
         const active = pathname === item.href;
         return (
-          <Button className={cn(active && "border-primary bg-primary text-primary-foreground hover:brightness-95")} key={item.href} size="sm" variant={active ? "outline" : "ghost"} asChild>
+          <Button className={cn(active && "border-primary bg-primary text-primary-foreground hover:bg-primary hover:brightness-95")} key={item.href} size="sm" variant={active ? "outline" : "ghost"} asChild>
             <Link href={item.href}>{item.label}</Link>
           </Button>
         );

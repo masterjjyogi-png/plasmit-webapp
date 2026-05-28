@@ -79,7 +79,7 @@ function SurgerySectionNav() {
         const active = pathname === item.href;
         const Icon = item.icon;
         return (
-          <Button className={cn(active && "border-primary bg-primary text-primary-foreground hover:brightness-95")} key={item.href} size="sm" variant={active ? "outline" : "ghost"} asChild>
+          <Button className={cn(active && "border-primary bg-primary text-primary-foreground hover:bg-primary hover:brightness-95")} key={item.href} size="sm" variant={active ? "outline" : "ghost"} asChild>
             <Link href={item.href}><Icon className="h-4 w-4" />{item.label}</Link>
           </Button>
         );
