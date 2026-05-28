@@ -40,6 +40,7 @@ function AuthFrame({
               <div className="text-xs text-muted-foreground">Staff access console</div>
             </div>
           </div>
+        </div>
 
         <Card className="shadow-soft">
           <CardHeader>

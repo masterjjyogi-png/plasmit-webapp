@@ -43,7 +43,7 @@ function readPreference(): UiPreference {
   }
 }
 
-function normalizePreferenceMode(preference: UiPreference) {
+function normalizePreferenceMode(preference: UiPreference): UiPreference {
   return { ...preference, mode: "light" };
 }
 
