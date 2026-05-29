@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { CalendarDays, ClipboardList, Edit3, Filter, MoreVertical, Plus, Scissors, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, ClipboardList, Edit3, Filter, MoreVertical, Plus, Scissors, Search, X } from "lucide-react";
 
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Button } from "@/components/ui/button";
@@ -132,17 +132,37 @@ function uniqueBookingsByRequest(bookings: OtBooking[]) {
   });
 }
 
+function ensureUniqueBookingIds(bookings: OtBooking[]) {
+  const seenBookingIds = new Set<string>();
+  return bookings.map((booking, index) => {
+    if (!seenBookingIds.has(booking.id)) {
+      seenBookingIds.add(booking.id);
+      return booking;
+    }
+    const nextBooking = { ...booking, id: `${booking.id}-${booking.requestId}-${index}` };
+    seenBookingIds.add(nextBooking.id);
+    return nextBooking;
+  });
+}
+
+function createBookingId(requestId: string, otId: string, time: string) {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `bk-${crypto.randomUUID()}`;
+  }
+  return `bk-${requestId}-${otId}-${time.replace(/[^a-z0-9]/gi, "")}-${Date.now()}`;
+}
+
 function useSurgeryState() {
   const [requests, setRequests] = usePersistentSurgeryState<SurgeryRequest[]>("surgery.requests.v6", surgeryRequests);
   const [storedBookings, setStoredBookings] = usePersistentSurgeryState<OtBooking[]>("surgery.bookings.v6", otBookings);
   const [rooms, setRooms] = usePersistentSurgeryState<typeof otRooms>("surgery.rooms.v2", otRooms);
   const [times, setTimes] = usePersistentSurgeryState<string[]>("surgery.times.v2", otTimes);
-  const bookings = React.useMemo(() => uniqueBookingsByRequest(storedBookings), [storedBookings]);
+  const bookings = React.useMemo(() => ensureUniqueBookingIds(uniqueBookingsByRequest(storedBookings)), [storedBookings]);
   const setBookings = React.useCallback((nextValue: React.SetStateAction<OtBooking[]>) => {
     setStoredBookings((currentBookings) => {
-      const currentUniqueBookings = uniqueBookingsByRequest(currentBookings);
+      const currentUniqueBookings = ensureUniqueBookingIds(uniqueBookingsByRequest(currentBookings));
       const resolvedBookings = typeof nextValue === "function" ? (nextValue as (current: OtBooking[]) => OtBooking[])(currentUniqueBookings) : nextValue;
-      return uniqueBookingsByRequest(resolvedBookings);
+      return ensureUniqueBookingIds(uniqueBookingsByRequest(resolvedBookings));
     });
   }, [setStoredBookings]);
   return { requests, setRequests, bookings, setBookings, rooms, setRooms, times, setTimes };
@@ -281,12 +301,14 @@ export function SurgeryDashboardPage() {
   const waitingListRequests = requests.filter((request) => request.status !== "Scheduled" && !scheduledRequestIds.has(request.id));
   const pending = waitingListRequests.filter((item) => item.status === "Requested").length;
   const accepted = waitingListRequests.filter((item) => item.status === "Accepted").length;
+  const scheduledPatients = requests.filter((request) => request.status === "Scheduled" || scheduledRequestIds.has(request.id)).length;
   const scheduled = bookings.filter((booking) => booking.date === scheduleMetricDate).length;
   return (
     <SurgeryShell title="Surgery Schedule" description="OT command center for surgery waiting list, acceptance, scheduling, slot status, and theatre utilization.">
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-4">
         <Metric icon={<ClipboardList className="h-5 w-5" />} label="Waiting requests" value={pending} />
         <Metric icon={<Scissors className="h-5 w-5" />} label="Accepted" value={accepted} />
+        <Metric icon={<CalendarDays className="h-5 w-5" />} label="Scheduled" value={scheduledPatients} />
         <Metric
           icon={<CalendarDays className="h-5 w-5" />}
           label={scheduleMetricDate === todayDateKey() ? "Scheduled today" : "Scheduled patients"}
@@ -343,7 +365,9 @@ export function SurgeryWaitingListPage() {
   const [filters, setFilters] = React.useState<SurgeryFilter[]>([]);
   const [draft, setDraft] = React.useState<RequestDraft | null>(null);
   const [scheduleRequest, setScheduleRequest] = React.useState<SurgeryRequest | null>(null);
+  const [page, setPage] = React.useState(1);
   const filterIdRef = React.useRef(1);
+  const pageSize = 10;
 
   const scheduledRequestIds = React.useMemo(() => new Set(bookings.map((booking) => booking.requestId)), [bookings]);
   const filtered = requests.filter((request) => (
@@ -351,10 +375,20 @@ export function SurgeryWaitingListPage() {
     !scheduledRequestIds.has(request.id) &&
     filters.every((filterItem) => normalizeFilterValue(String(request[filterItem.criteria])).includes(normalizeFilterValue(filterItem.value)))
   ));
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageStart = (page - 1) * pageSize;
+  const paginatedRequests = filtered.slice(pageStart, pageStart + pageSize);
+  const firstVisibleRequest = filtered.length === 0 ? 0 : pageStart + 1;
+  const lastVisibleRequest = Math.min(pageStart + pageSize, filtered.length);
+
+  React.useEffect(() => {
+    setPage((currentPage) => Math.min(currentPage, pageCount));
+  }, [pageCount]);
 
   function addFilter() {
     const id = `flt-local-${filterIdRef.current}`;
     filterIdRef.current += 1;
+    setPage(1);
     setFilters((current) => [...current, { id, criteria: "patientName", value: "" }]);
   }
 
@@ -386,11 +420,11 @@ export function SurgeryWaitingListPage() {
           {filters.length === 0 ? <AlertBanner icon={Filter} title="No filters active">Add a filter to narrow the waiting list.</AlertBanner> : null}
           {filters.map((filterItem) => (
             <div className="grid gap-2 md:grid-cols-[220px_minmax(0,1fr)_auto]" key={filterItem.id}>
-              <select className="h-9 rounded-md border border-input bg-background px-2 text-sm" value={filterItem.criteria} onChange={(event) => setFilters((current) => current.map((item) => item.id === filterItem.id ? { ...item, criteria: event.target.value as SurgeryFilter["criteria"] } : item))}>
+              <select className="h-9 rounded-md border border-input bg-background px-2 text-sm" value={filterItem.criteria} onChange={(event) => { setPage(1); setFilters((current) => current.map((item) => item.id === filterItem.id ? { ...item, criteria: event.target.value as SurgeryFilter["criteria"] } : item)); }}>
                 {filterOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
-              <Input value={filterItem.value} onChange={(event) => setFilters((current) => current.map((item) => item.id === filterItem.id ? { ...item, value: event.target.value } : item))} placeholder="Filter value" />
-              <Button variant="ghost" onClick={() => setFilters((current) => current.filter((item) => item.id !== filterItem.id))}>Remove</Button>
+              <Input value={filterItem.value} onChange={(event) => { setPage(1); setFilters((current) => current.map((item) => item.id === filterItem.id ? { ...item, value: event.target.value } : item)); }} placeholder="Filter value" />
+              <Button variant="ghost" onClick={() => { setPage(1); setFilters((current) => current.filter((item) => item.id !== filterItem.id)); }}>Remove</Button>
             </div>
           ))}
         </CardContent>
@@ -404,7 +438,7 @@ export function SurgeryWaitingListPage() {
                 <tr>{["Patient name", "Age/Gender", "MRN", "Requested by", "Chief surgeon", "Anesthetist", "Surgery name", "Date", "Instructions", "Status", "Actions"].map((head) => <th className="border-b border-border px-3 py-2 text-left" key={head}>{head}</th>)}</tr>
               </thead>
               <tbody>
-                {filtered.map((request) => (
+                {paginatedRequests.map((request) => (
                   <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/60" key={request.id}>
                     <td className="px-3 py-2 font-medium">{request.patientName}</td>
                     <td className="px-3 py-2">{request.ageGender}</td>
@@ -452,8 +486,33 @@ export function SurgeryWaitingListPage() {
                     </td>
                   </tr>
                 ))}
+                {paginatedRequests.length === 0 ? (
+                  <tr>
+                    <td className="px-3 py-8 text-center text-sm text-muted-foreground" colSpan={11}>
+                      No surgery requests match the active filters.
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
+          </div>
+          <div className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              Showing {firstVisibleRequest}-{lastVisibleRequest} of {filtered.length}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}>
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <span className="min-w-16 text-center text-xs font-medium text-foreground">
+                {page} / {pageCount}
+              </span>
+              <Button size="sm" variant="outline" disabled={page === pageCount} onClick={() => setPage((currentPage) => Math.min(pageCount, currentPage + 1))}>
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -466,6 +525,78 @@ export function SurgeryWaitingListPage() {
           </div>
         ) : null}
       </CenterModal>
+    </SurgeryShell>
+  );
+}
+
+export function SurgeryGlobalSearchPage() {
+  const { requests, bookings } = useSurgeryState();
+  const [query, setQuery] = React.useState("");
+  const scheduledRequestIds = React.useMemo(() => new Set(bookings.map((booking) => booking.requestId)), [bookings]);
+  const searchValue = normalizeFilterValue(query);
+  const rows = React.useMemo(() => {
+    if (!searchValue) return [];
+    return requests.filter((request) => {
+      const searchableValues = [
+        request.patientName,
+        request.chiefSurgeon,
+        request.requestedBy,
+        request.anesthetist,
+        request.surgeryName,
+      ];
+      return searchableValues.some((value) => normalizeFilterValue(value).includes(searchValue));
+    });
+  }, [requests, searchValue]);
+
+  return (
+    <SurgeryShell title="Global Search" description="Search surgery requests by patient name, chief surgeon, requested by, anesthetist, or surgery name.">
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Search surgery data</CardTitle>
+            <CardDescription>{rows.length} matching rows</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative max-w-xl">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Patient name, chief surgeon, requested by, anesthetist, or surgery name" />
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full min-w-[1060px] border-collapse text-sm">
+              <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  {["Patient name", "MRN", "Chief surgeon", "Requested by", "Anesthetist", "Surgery name", "Date", "Priority", "Status"].map((head) => (
+                    <th className="border-b border-border px-3 py-2 text-left" key={head}>{head}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((request) => (
+                  <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/60" key={request.id}>
+                    <td className="px-3 py-2 font-medium">{request.patientName}</td>
+                    <td className="px-3 py-2">{request.mrn}</td>
+                    <td className="px-3 py-2">{request.chiefSurgeon}</td>
+                    <td className="px-3 py-2">{request.requestedBy}</td>
+                    <td className="px-3 py-2">{request.anesthetist}</td>
+                    <td className="px-3 py-2">{request.surgeryName}</td>
+                    <td className="px-3 py-2">{request.surgeryDate}</td>
+                    <td className="px-3 py-2">{request.priority}</td>
+                    <td className="px-3 py-2"><SurgeryStatus status={scheduledRequestIds.has(request.id) ? "Scheduled" : request.status} /></td>
+                  </tr>
+                ))}
+                {rows.length === 0 ? (
+                  <tr>
+                    <td className="px-3 py-8 text-center text-sm text-muted-foreground" colSpan={9}>
+                      {query.trim() ? "No matching surgery requests found." : "Enter a search term to view matching surgery rows."}
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </SurgeryShell>
   );
 }
@@ -510,7 +641,6 @@ export function SurgerySchedulePage() {
   const [otToDelete, setOtToDelete] = React.useState("");
   const [tableActionError, setTableActionError] = React.useState("");
   const [contextScheduleError, setContextScheduleError] = React.useState("");
-  const bookingIdRef = React.useRef(1);
   const otIdRef = React.useRef(7);
   const selectedRequest = requests.find((request) => request.id === selectedRequestId) ?? requests[0];
   const dateBookings = bookings.filter((booking) => booking.date === date);
@@ -543,8 +673,7 @@ export function SurgerySchedulePage() {
       if (existingForRequest) {
         return current.map((booking) => booking.id === existingForRequest.id ? { ...booking, otId, time, date } : booking);
       }
-      const next: OtBooking = { id: `bk-local-${bookingIdRef.current}`, requestId: selectedRequest.id, otId, time, date, status: "Scheduled" };
-      bookingIdRef.current += 1;
+      const next: OtBooking = { id: createBookingId(selectedRequest.id, otId, time), requestId: selectedRequest.id, otId, time, date, status: "Scheduled" };
       return [...current, next];
     });
     setRequests((current) => current.map((request) => request.id === selectedRequest.id ? { ...request, status: "Scheduled", surgeryDate: date, surgeryTime: time } : request));
@@ -576,8 +705,7 @@ export function SurgerySchedulePage() {
       if (existingBooking) {
         return current.map((booking) => booking.id === existingBooking.id ? { ...booking, otId: contextOtId, time: contextTime, date } : booking);
       }
-      const next: OtBooking = { id: `bk-local-${bookingIdRef.current}`, requestId: selectedRequest.id, otId: contextOtId, time: contextTime, date, status: "Scheduled" };
-      bookingIdRef.current += 1;
+      const next: OtBooking = { id: createBookingId(selectedRequest.id, contextOtId, contextTime), requestId: selectedRequest.id, otId: contextOtId, time: contextTime, date, status: "Scheduled" };
       return [...current, next];
     });
     setRequests((current) => current.map((request) => request.id === selectedRequest.id ? { ...request, status: "Scheduled", surgeryDate: date, surgeryTime: contextTime } : request));
@@ -717,17 +845,22 @@ export function SurgerySchedulePage() {
 
   return (
     <SurgeryShell title="OT Schedule" description="Schedule all OTs in 15-minute slots and update patient movement status.">
-      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <Card>
-          <CardHeader><CardTitle>Patient details</CardTitle><CardDescription>Shown when user schedules against a patient.</CardDescription></CardHeader>
-          <CardContent className="space-y-3">
+      <Card>
+        <CardHeader><CardTitle>Patient details</CardTitle><CardDescription>Shown when user schedules against a patient.</CardDescription></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
             <Input type="date" value={date} onChange={(event) => setDate(event.target.value)} placeholder="Date" />
-            <div className="relative">
+            <div className="relative min-w-0">
               <Input
                 value={requestSearch}
                 onChange={(event) => {
-                  setRequestSearch(event.target.value);
-                  setRequestSearchOpen(true);
+                  const nextSearch = event.target.value;
+                  setRequestSearch(nextSearch);
+                  setRequestSearchOpen(Boolean(nextSearch.trim()));
+                  if (!nextSearch.trim()) {
+                    setSelectedRequestVisible(false);
+                    setContextScheduleError("");
+                  }
                 }}
                 onFocus={() => setRequestSearchOpen(Boolean(requestSearch.trim()))}
                 placeholder="Search patient, MRN, surgery, surgeon, anesthetist"
@@ -754,7 +887,8 @@ export function SurgerySchedulePage() {
                 </div>
               ) : null}
             </div>
-            {selectedRequestVisible ? (
+          </div>
+          {selectedRequestVisible ? (
             <div className="rounded-lg border border-border bg-surface-muted/50 p-3">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
@@ -780,38 +914,31 @@ export function SurgerySchedulePage() {
                       {scheduleRooms.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}
                     </select>
                   </label>
-                  <label className="space-y-1">
-                    <span className="block font-medium text-foreground">Time</span>
-                    <select
-                      className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground"
+	                  <label className="space-y-1">
+	                    <span className="block font-medium text-foreground">Time</span>
+	                    <select
+	                      className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground"
                       value={contextTime}
                       onChange={(event) => setContextTime(event.target.value)}
                     >
-                      {scheduleTimes.map((time) => <option key={time} value={time}>{time}</option>)}
-                    </select>
-                  </label>
-                  <Button size="sm" onClick={saveSelectedRequestSchedule}>Save</Button>
-                </div>
-                {contextScheduleError ? <div className="mt-2 rounded-md border border-danger/30 bg-danger/10 px-2 py-1 text-danger">{contextScheduleError}</div> : null}
-                <div className="mt-2">OT: {selectedRoom?.name ?? "Not booked"}</div>
-                <div>Table time: {selectedBooking?.time ?? selectedRequest.surgeryTime}</div>
-                <div>Status: {selectedScheduleStatus}</div>
-                <div>Priority: {selectedRequest.priority}</div>
-                <div>Duration: {selectedRequest.durationMinutes} min</div>
-                <div>Surgery: {selectedRequest.surgeryName}</div>
-                <div>Surgeon: {selectedRequest.chiefSurgeon}</div>
-                <div>Anesthetist: {selectedRequest.anesthetist}</div>
-                <div>Instructions: {selectedRequest.instructions}</div>
-              </div>
-            </div>
-            ) : null}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>Schedule table</CardTitle><CardDescription>Click an empty slot to book. Click a booked slot to view full request details.</CardDescription></CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full min-w-[980px] border-collapse text-sm">
+	                      {scheduleTimes.map((time) => <option key={time} value={time}>{time}</option>)}
+	                    </select>
+	                  </label>
+	                  <div className="flex justify-end">
+	                    <Button className="min-w-16" size="sm" onClick={saveSelectedRequestSchedule}>OK</Button>
+	                  </div>
+	                </div>
+	                {contextScheduleError ? <div className="mt-2 rounded-md border border-danger/30 bg-danger/10 px-2 py-1 text-danger">{contextScheduleError}</div> : null}
+	              </div>
+	            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+      <Card className="-mx-4 rounded-none border-x-0 md:-mx-6">
+        <CardHeader><CardTitle>Schedule table</CardTitle><CardDescription>Click an empty slot to book. Click a booked slot to view full request details.</CardDescription></CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto border-y border-border">
+            <table className="w-full min-w-[1280px] border-collapse text-sm">
                 <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <th className="border-b border-border px-3 py-2 text-left">Time</th>
@@ -905,11 +1032,10 @@ export function SurgerySchedulePage() {
                     </td>
                   </tr>
                 </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader><CardTitle>Status legend</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap gap-2">{slotStatuses.map((status) => <SurgeryStatus key={status} status={status} />)}</CardContent>

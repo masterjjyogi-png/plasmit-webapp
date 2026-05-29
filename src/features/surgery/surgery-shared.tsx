@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ClipboardList, LockKeyhole, Scissors } from "lucide-react";
+import { CalendarDays, ClipboardList, LockKeyhole, Scissors, Search } from "lucide-react";
 
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
@@ -57,8 +57,7 @@ export function SurgeryShell({
     <ProtectedSurgery>
       {() => (
         <>
-          <PageHeader title={title} description={description} eyebrow="Surgery module" actions={actions} />
-          <SurgerySectionNav />
+          <PageHeader title={title} description={description} eyebrow="Surgery module" actions={<><SurgerySectionNav />{actions}</>} />
           <div className="space-y-4">{children}</div>
         </>
       )}
@@ -72,6 +71,7 @@ function SurgerySectionNav() {
     { label: "Dashboard", href: "/surgery", icon: Scissors },
     { label: "Waiting list", href: "/surgery/waiting-list", icon: ClipboardList },
     { label: "Schedule", href: "/surgery/schedule", icon: CalendarDays },
+    { label: "Global Search", href: "/surgery/global-search", icon: Search },
   ];
   return (
     <div className="flex flex-wrap gap-2">
