@@ -128,5 +128,7 @@ export const searchResults: SearchResult[] = [
   { id: "r-1", type: "Radiology report", title: "RAD-4412", description: "CT Brain plain", meta: "Draft report", route: "/radiology" },
   { id: "r-2", type: "Radiology order", title: "RAD-4498", description: "MRI Spine screening", meta: "Scheduled", route: "/radiology/orders" },
   { id: "r-3", type: "Radiology schedule", title: "Today modality list", description: "CT, MRI, X-ray, ultrasound queue", meta: "Live list", route: "/radiology/schedule" },
+  { id: "srg-module", type: "Module", title: "Surgery", description: "Surgery dashboard, waiting list, OT schedule, and global search", meta: "Module", route: "/surgery" },
+  { id: "srg-schedule", type: "Action", title: "Open surgery schedule", description: "Open OT schedule workspace", meta: "Shortcut", route: "/surgery/schedule" },
   { id: "a-1", type: "Action", title: "Open radiology", description: "Open radiology workspace", meta: "Shortcut", route: "/radiology" },
 ];
