@@ -43,6 +43,7 @@ const waitingRequestStatusOptions: Array<{ label: string; value: SurgeryRequestS
   { label: "Accepted", value: "Accepted" },
   { label: "Schedule", value: "Scheduled" },
 ];
+const maxWaitingListFilters = 8;
 const surgeryStorageEvent = "plasmit-surgery-storage-change";
 const surgeryStorageCache = new Map<string, { raw: string | null; value: unknown }>();
 
@@ -386,6 +387,7 @@ export function SurgeryWaitingListPage() {
   }, [pageCount]);
 
   function addFilter() {
+    if (filters.length >= maxWaitingListFilters) return;
     const id = `flt-local-${filterIdRef.current}`;
     filterIdRef.current += 1;
     setPage(1);
@@ -414,10 +416,11 @@ export function SurgeryWaitingListPage() {
             <CardTitle>Filter by</CardTitle>
             <CardDescription>Add multiple criteria filters for patient, MRN, surgeon, anesthetist, procedure, date, or status.</CardDescription>
           </div>
-          <Button size="sm" onClick={addFilter}><Plus className="h-4 w-4" />Add filter</Button>
+          <Button size="sm" onClick={addFilter} disabled={filters.length >= maxWaitingListFilters}><Plus className="h-4 w-4" />Add filter</Button>
         </CardHeader>
         <CardContent className="space-y-2">
           {filters.length === 0 ? <AlertBanner icon={Filter} title="No filters active">Add a filter to narrow the waiting list.</AlertBanner> : null}
+          {filters.length >= maxWaitingListFilters ? <AlertBanner icon={Filter} title="Filter limit reached">Maximum 8 filters can be active at once.</AlertBanner> : null}
           {filters.map((filterItem) => (
             <div className="grid gap-2 md:grid-cols-[220px_minmax(0,1fr)_auto]" key={filterItem.id}>
               <select className="h-9 rounded-md border border-input bg-background px-2 text-sm" value={filterItem.criteria} onChange={(event) => { setPage(1); setFilters((current) => current.map((item) => item.id === filterItem.id ? { ...item, criteria: event.target.value as SurgeryFilter["criteria"] } : item)); }}>
