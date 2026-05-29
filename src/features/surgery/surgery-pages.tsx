@@ -133,8 +133,8 @@ function uniqueBookingsByRequest(bookings: OtBooking[]) {
 }
 
 function useSurgeryState() {
-  const [requests, setRequests] = usePersistentSurgeryState<SurgeryRequest[]>("surgery.requests.v5", surgeryRequests);
-  const [storedBookings, setStoredBookings] = usePersistentSurgeryState<OtBooking[]>("surgery.bookings.v5", otBookings);
+  const [requests, setRequests] = usePersistentSurgeryState<SurgeryRequest[]>("surgery.requests.v6", surgeryRequests);
+  const [storedBookings, setStoredBookings] = usePersistentSurgeryState<OtBooking[]>("surgery.bookings.v6", otBookings);
   const [rooms, setRooms] = usePersistentSurgeryState<typeof otRooms>("surgery.rooms.v2", otRooms);
   const [times, setTimes] = usePersistentSurgeryState<string[]>("surgery.times.v2", otTimes);
   const bookings = React.useMemo(() => uniqueBookingsByRequest(storedBookings), [storedBookings]);
