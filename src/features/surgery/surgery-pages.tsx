@@ -526,6 +526,7 @@ export function SurgeryGlobalSearchPage() {
     return requests.filter((request) => {
       const searchableValues = [
         request.patientName,
+        request.id,
         request.chiefSurgeon,
         request.requestedBy,
         request.anesthetist,
@@ -536,7 +537,7 @@ export function SurgeryGlobalSearchPage() {
   }, [requests, searchValue]);
 
   return (
-    <SurgeryShell title="Global Search" description="Search surgery requests by patient name, chief surgeon, requested by, anesthetist, or surgery name.">
+    <SurgeryShell title="Global Search" description="Search surgery requests by patient name, patient ID, chief surgeon, requested by, anesthetist, or surgery name.">
       <Card>
         <CardHeader>
           <div>
@@ -547,13 +548,13 @@ export function SurgeryGlobalSearchPage() {
         <CardContent className="space-y-4">
           <div className="relative max-w-xl">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Patient name, chief surgeon, requested by, anesthetist, or surgery name" />
+            <Input className="pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Patient name, Patient ID, chief surgeon, requested by, anesthetist, or surgery name" />
           </div>
           <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full min-w-[1060px] border-collapse text-sm">
+            <table className="w-full min-w-[1120px] border-collapse text-sm">
               <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  {["Patient name", "MRN", "Chief surgeon", "Requested by", "Anesthetist", "Surgery name", "Date", "Priority", "Status"].map((head) => (
+                  {["Patient name", "Patient ID", "MRN", "Chief surgeon", "Requested by", "Anesthetist", "Surgery name", "Date", "Priority", "Status"].map((head) => (
                     <th className="border-b border-border px-3 py-2 text-left" key={head}>{head}</th>
                   ))}
                 </tr>
@@ -562,6 +563,7 @@ export function SurgeryGlobalSearchPage() {
                 {rows.map((request) => (
                   <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/60" key={request.id}>
                     <td className="px-3 py-2 font-medium">{request.patientName}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{request.id}</td>
                     <td className="px-3 py-2">{request.mrn}</td>
                     <td className="px-3 py-2">{request.chiefSurgeon}</td>
                     <td className="px-3 py-2">{request.requestedBy}</td>
@@ -574,7 +576,7 @@ export function SurgeryGlobalSearchPage() {
                 ))}
                 {rows.length === 0 ? (
                   <tr>
-                    <td className="px-3 py-8 text-center text-sm text-muted-foreground" colSpan={9}>
+                    <td className="px-3 py-8 text-center text-sm text-muted-foreground" colSpan={10}>
                       {query.trim() ? "No matching surgery requests found." : "Enter a search term to view matching surgery rows."}
                     </td>
                   </tr>
