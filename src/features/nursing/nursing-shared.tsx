@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, LockKeyhole, Plus, Settings, UserRoundCheck } from "lucide-react";
+import { ClipboardCheck, LayoutDashboard, LockKeyhole, Settings, UserRoundCheck } from "lucide-react";
 
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
@@ -48,18 +48,57 @@ export function NursingShell({
   description,
   children,
   actions,
+  showSectionNav = true,
 }: {
   title: string;
   description: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
+  showSectionNav?: boolean;
 }) {
+  const pathname = usePathname();
+
+  const buttonLinks = [
+    { href: "/nurse", label: "Dashboard", active: pathname === "/nurse", icon: LayoutDashboard },
+    { href: "/nurse/assessments", label: "Assessment", active: pathname === "/nurse/assessments", icon: ClipboardCheck },
+    {
+      href: "/nurse/assessments/configuration",
+      label: "Assessment configuration",
+      active: pathname === "/nurse/assessments/configuration",
+      icon: Settings,
+    },
+    { href: "/nurse/care-plans", label: "Care plan", active: pathname === "/nurse/care-plans", icon: UserRoundCheck },
+    {
+      href: "/nurse/care-plans/configuration",
+      label: "Care plan configuration",
+      active: pathname === "/nurse/care-plans/configuration",
+      icon: Settings,
+    },
+  ];
+
+  const defaultActions = (
+    <>
+      {buttonLinks.map((button) => (
+        <Button key={button.href} size="sm" variant={button.active ? "default" : "outline"} asChild>
+          <Link href={button.href}>
+            <button.icon className="h-4 w-4" />
+            {button.label}
+          </Link>
+        </Button>
+      ))}
+    </>
+  );
+
   return (
     <ProtectedNursing>
       {() => (
         <>
-          <PageHeader title={title} description={description} eyebrow="Nurse module" actions={actions} />
-          <NursingSectionNav />
+          <PageHeader
+            title={title}
+            description={description}
+            eyebrow="Nurse module"
+            actions={showSectionNav ? (actions ? <>{defaultActions}{actions}</> : defaultActions) : actions}
+          />
           <div className="space-y-4">{children}</div>
         </>
       )}
@@ -100,28 +139,6 @@ export function NursingQuickNav() {
   );
 }
 
-function NursingSectionNav() {
-  const pathname = usePathname();
-  const items = [
-    { label: "Assessments", href: "/nurse/assessments" },
-    { label: "Assessment configuration", href: "/nurse/assessments/configuration" },
-    { label: "Care plans", href: "/nurse/care-plans" },
-    { label: "Care plan configuration", href: "/nurse/care-plans/configuration" },
-  ];
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => {
-        const active = pathname === item.href;
-        return (
-          <Button className={cn(active && "border-primary bg-primary text-primary-foreground hover:bg-primary hover:brightness-95")} key={item.href} size="sm" variant={active ? "outline" : "ghost"} asChild>
-            <Link href={item.href}>{item.label}</Link>
-          </Button>
-        );
-      })}
-    </div>
-  );
-}
-
 export function NursingPatientStrip() {
   return (
     <Card className="sticky top-[132px] z-20">
@@ -134,11 +151,6 @@ export function NursingPatientStrip() {
             <NursingStatus status="Active" />
           </div>
           <div className="mt-1 text-xs text-muted-foreground">Orthopedics ward • OW-204 • Consultant Dr. Aman Verma</div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" asChild><Link href="/nurse/assessments">Assessment</Link></Button>
-          <Button size="sm" variant="outline" asChild><Link href="/nurse/care-plans">Care plan</Link></Button>
-          <Button size="sm"><Plus className="h-4 w-4" />New entry</Button>
         </div>
       </CardContent>
     </Card>

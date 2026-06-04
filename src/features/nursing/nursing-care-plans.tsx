@@ -1,7 +1,8 @@
 "use client";
 
+import * as Dialog from "@radix-ui/react-dialog";
 import * as React from "react";
-import { CheckCircle2, ClipboardList, Plus, Search } from "lucide-react";
+import { CheckCircle2, ClipboardList, Plus, Search, X } from "lucide-react";
 
 import { AlertBanner } from "@/components/ui/alert-banner";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,42 @@ type CompleteTarget = { planId: string; problemId: string; goalId: string; inter
 
 function stamp() {
   return new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function CenterModal({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/35 backdrop-blur-[1px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(calc(100vw-2rem),440px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-lg border border-border bg-surface shadow-soft outline-none">
+          <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
+            <div>
+              <Dialog.Title className="text-sm font-semibold text-foreground">{title}</Dialog.Title>
+              {description ? <Dialog.Description className="mt-1 text-xs text-muted-foreground">{description}</Dialog.Description> : null}
+            </div>
+            <Dialog.Close asChild>
+              <Button size="icon" variant="ghost" aria-label="Close modal">
+                <X className="h-4 w-4" />
+              </Button>
+            </Dialog.Close>
+          </div>
+          <div className="p-4">{children}</div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
 }
 
 function mapPlans(plans: CarePlan[], planId: string, update: (plan: CarePlan) => CarePlan) {
@@ -275,13 +312,16 @@ export function NursingCarePlansPage() {
   }
 
   return (
-    <NursingShell title="Nursing Care Plans" description="Care-plan documentation with problems, goals, interventions, notes, worklist, and overview." actions={<Button size="sm" onClick={() => setNewPlanOpen(true)}><Plus className="h-4 w-4" />Add care plan</Button>}>
+    <NursingShell title="Nursing Care Plans" description="Care-plan documentation with problems, goals, interventions, notes, worklist, and overview.">
       <NursingPatientStrip />
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium">Visit care plan</span>
-        <select className="h-9 w-full min-w-[320px] max-w-xl rounded-md border border-input bg-background px-2 text-sm sm:w-[520px]" value={plan?.id} onChange={(event) => setPlanId(event.target.value)}>
-          {plans.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
-        </select>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium">Visit care plan</span>
+          <select className="h-9 w-full min-w-[320px] max-w-xl rounded-md border border-input bg-background px-2 text-sm sm:w-[520px]" value={plan?.id} onChange={(event) => setPlanId(event.target.value)}>
+            {plans.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+          </select>
+        </div>
+        <Button size="sm" onClick={() => setNewPlanOpen(true)}><Plus className="h-4 w-4" />Add care plan</Button>
       </div>
       <Tabs defaultValue="document">
         <TabsList>
@@ -299,25 +339,43 @@ export function NursingCarePlansPage() {
         <TabsContent value="notes"><ProgressNotes notes={notes} /></TabsContent>
         <TabsContent value="overview"><Overview plan={plan} /></TabsContent>
       </Tabs>
-      <Drawer open={newPlanOpen} onOpenChange={setNewPlanOpen} title="Add care plan" description="Create a care plan for this visit">
-        <div className="space-y-3">
-          <Input value={newPlanName} onChange={(event) => setNewPlanName(event.target.value)} placeholder="Care plan name" />
-          <Button className="w-full" onClick={addNewPlan}>Add care plan</Button>
-        </div>
-      </Drawer>
-      <Drawer open={Boolean(addTarget)} onOpenChange={(open) => !open && setAddTarget(null)} title={`Add ${addTarget?.type ?? "item"}`}>
-        <div className="space-y-3">
-          <Input value={addValue} onChange={(event) => setAddValue(event.target.value)} placeholder={`Name of ${addTarget?.type ?? "item"}`} />
-          <Button className="w-full" onClick={saveAddTarget}>Add</Button>
-        </div>
-      </Drawer>
-      <Drawer open={Boolean(completeTarget)} onOpenChange={(open) => !open && setCompleteTarget(null)} title="Document completion" description={completeTarget?.title}>
-        <div className="space-y-3">
+      <CenterModal open={newPlanOpen} onOpenChange={setNewPlanOpen} title="Add care plan" description="Create a care plan for this visit.">
+        <form
+          className="space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            addNewPlan();
+          }}
+        >
+          <Input value={newPlanName} onChange={(event) => setNewPlanName(event.target.value)} placeholder="Care plan name" autoFocus />
+          <Button className="w-full" type="submit">Add care plan</Button>
+        </form>
+      </CenterModal>
+      <CenterModal open={Boolean(addTarget)} onOpenChange={(open) => !open && setAddTarget(null)} title={`Add ${addTarget?.type ?? "item"}`}>
+        <form
+          className="space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveAddTarget();
+          }}
+        >
+          <Input value={addValue} onChange={(event) => setAddValue(event.target.value)} placeholder={`Name of ${addTarget?.type ?? "item"}`} autoFocus />
+          <Button className="w-full" type="submit">Add</Button>
+        </form>
+      </CenterModal>
+      <CenterModal open={Boolean(completeTarget)} onOpenChange={(open) => !open && setCompleteTarget(null)} title="Document completion" description={completeTarget?.title}>
+        <form
+          className="space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveComplete();
+          }}
+        >
           <Input value={stamp()} readOnly />
-          <textarea className="min-h-36 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={completeNote} onChange={(event) => setCompleteNote(event.target.value)} placeholder="Notes" />
-          <Button className="w-full" onClick={saveComplete}>Complete and add note</Button>
-        </div>
-      </Drawer>
+          <textarea className="min-h-36 w-full rounded-md border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20" value={completeNote} onChange={(event) => setCompleteNote(event.target.value)} placeholder="Notes" autoFocus />
+          <Button className="w-full" type="submit">Complete and add note</Button>
+        </form>
+      </CenterModal>
     </NursingShell>
   );
 }
@@ -344,11 +402,16 @@ export function NursingCarePlanConfigurationPage() {
   }
 
   return (
-    <NursingShell title="Care Plan Configuration" description="Reusable care plan templates with problem, goal, intervention counts and active state." actions={<Button size="sm" onClick={newTemplate}><Plus className="h-4 w-4" />New care plan</Button>}>
+    <NursingShell title="Care Plan Configuration" description="Reusable care plan templates with problem, goal, intervention counts and active state.">
       <Card>
-        <CardHeader>
-          <CardTitle>List of care plans</CardTitle>
-          <CardDescription>Edit or delete reusable templates.</CardDescription>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" onClick={newTemplate}><Plus className="h-4 w-4" />New care plan</Button>
+            <div>
+              <CardTitle>List of care plans</CardTitle>
+              <CardDescription>Edit or delete reusable templates.</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-2">
           {templates.map((template) => (

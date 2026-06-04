@@ -326,10 +326,6 @@ export function SurgeryDashboardPage() {
           </label>
         </Metric>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        <ModuleLink href="/surgery/waiting-list" title="Waiting list" description="Review doctor requests, filter cases, edit details, accept and schedule." icon={<ClipboardList className="h-5 w-5" />} />
-        <ModuleLink href="/surgery/schedule" title="OT schedule" description="Book 15-minute OT slots, update patient movement status, and view booked details." icon={<CalendarDays className="h-5 w-5" />} />
-      </div>
     </SurgeryShell>
   );
 }
@@ -351,16 +347,6 @@ function Metric({ icon, label, value, children }: { icon: React.ReactNode; label
   );
 }
 
-function ModuleLink({ href, title, description, icon }: { href: string; title: string; description: string; icon: React.ReactNode }) {
-  return (
-    <Link className="rounded-lg border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-muted" href={href}>
-      <div className="mb-3 text-muted-foreground">{icon}</div>
-      <div className="font-semibold">{title}</div>
-      <div className="mt-1 text-sm text-muted-foreground">{description}</div>
-    </Link>
-  );
-}
-
 export function SurgeryWaitingListPage() {
   const { requests, setRequests, bookings } = useSurgeryState();
   const [filters, setFilters] = React.useState<SurgeryFilter[]>([]);
@@ -377,14 +363,11 @@ export function SurgeryWaitingListPage() {
     filters.every((filterItem) => normalizeFilterValue(String(request[filterItem.criteria])).includes(normalizeFilterValue(filterItem.value)))
   ));
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const pageStart = (page - 1) * pageSize;
+  const currentPage = Math.min(page, pageCount);
+  const pageStart = (currentPage - 1) * pageSize;
   const paginatedRequests = filtered.slice(pageStart, pageStart + pageSize);
   const firstVisibleRequest = filtered.length === 0 ? 0 : pageStart + 1;
   const lastVisibleRequest = Math.min(pageStart + pageSize, filtered.length);
-
-  React.useEffect(() => {
-    setPage((currentPage) => Math.min(currentPage, pageCount));
-  }, [pageCount]);
 
   function addFilter() {
     if (filters.length >= maxWaitingListFilters) return;
@@ -438,12 +421,13 @@ export function SurgeryWaitingListPage() {
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full min-w-[1120px] border-collapse text-sm">
               <thead className="bg-surface-muted text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <tr>{["Patient name", "Age/Gender", "MRN", "Requested by", "Chief surgeon", "Anesthetist", "Surgery name", "Date", "Instructions", "Status", "Actions"].map((head) => <th className="border-b border-border px-3 py-2 text-left" key={head}>{head}</th>)}</tr>
+                <tr>{["Patient name", "Patient ID", "Age/Gender", "MRN", "Requested by", "Chief surgeon", "Anesthetist", "Surgery name", "Date", "Instructions", "Status", "Actions"].map((head) => <th className="border-b border-border px-3 py-2 text-left" key={head}>{head}</th>)}</tr>
               </thead>
               <tbody>
                 {paginatedRequests.map((request) => (
                   <tr className="border-b border-border last:border-b-0 hover:bg-surface-muted/60" key={request.id}>
                     <td className="px-3 py-2 font-medium">{request.patientName}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{request.id}</td>
                     <td className="px-3 py-2">{request.ageGender}</td>
                     <td className="px-3 py-2">{request.mrn}</td>
                     <td className="px-3 py-2">{request.requestedBy}</td>
@@ -491,7 +475,7 @@ export function SurgeryWaitingListPage() {
                 ))}
                 {paginatedRequests.length === 0 ? (
                   <tr>
-                    <td className="px-3 py-8 text-center text-sm text-muted-foreground" colSpan={11}>
+                    <td className="px-3 py-8 text-center text-sm text-muted-foreground" colSpan={12}>
                       No surgery requests match the active filters.
                     </td>
                   </tr>
@@ -504,14 +488,14 @@ export function SurgeryWaitingListPage() {
               Showing {firstVisibleRequest}-{lastVisibleRequest} of {filtered.length}
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}>
+              <Button size="sm" variant="outline" disabled={currentPage === 1} onClick={() => setPage((pageValue) => Math.max(1, pageValue - 1))}>
                 <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
               <span className="min-w-16 text-center text-xs font-medium text-foreground">
-                {page} / {pageCount}
+                {currentPage} / {pageCount}
               </span>
-              <Button size="sm" variant="outline" disabled={page === pageCount} onClick={() => setPage((currentPage) => Math.min(pageCount, currentPage + 1))}>
+              <Button size="sm" variant="outline" disabled={currentPage === pageCount} onClick={() => setPage((pageValue) => Math.min(pageCount, pageValue + 1))}>
                 Next
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -648,7 +632,6 @@ export function SurgerySchedulePage() {
   const selectedRequest = requests.find((request) => request.id === selectedRequestId) ?? requests[0];
   const dateBookings = bookings.filter((booking) => booking.date === date);
   const selectedBooking = dateBookings.find((booking) => booking.requestId === selectedRequest.id);
-  const selectedRoom = selectedBooking ? scheduleRooms.find((room) => room.id === selectedBooking.otId) : undefined;
   const selectedScheduleStatus = selectedBooking?.status ?? selectedRequest.status;
   const [contextOtId, setContextOtId] = React.useState(selectedBooking?.otId ?? scheduleRooms[0]?.id ?? "");
   const [contextTime, setContextTime] = React.useState(selectedBooking?.time || selectedRequest.surgeryTime || scheduleTimes[0]);

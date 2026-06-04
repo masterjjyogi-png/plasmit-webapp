@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { MessageSquareText, Plus, Search, Star, Trash2 } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { MessageSquareText, Plus, Search, Star, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -433,7 +434,7 @@ export function NursingAssessmentConfigurationPage() {
   }
 
   return (
-    <NursingShell title="Assessment Configuration" description="Configure grouper rows, content rows, field types, dropdown options, comments, and intake/output flags." actions={<Button size="sm" onClick={() => openNew("Content")}><Plus className="h-4 w-4" />Add row</Button>}>
+    <NursingShell title="Assessment Configuration" description="Configure grouper rows, content rows, field types, dropdown options, comments, and intake/output flags.">
       <Tabs defaultValue="master">
         <TabsList>
           <TabsTrigger value="master">Assessments master</TabsTrigger>
@@ -446,8 +447,9 @@ export function NursingAssessmentConfigurationPage() {
                 <CardTitle>Assessments Master</CardTitle>
                 <CardDescription>Only active rows appear in nursing documentation.</CardDescription>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <div className="relative w-full max-w-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" onClick={() => openNew("Content")}><Plus className="h-4 w-4" />Add row</Button>
+                <div className="relative min-w-0 flex-1 max-w-xs">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input className="pl-8" placeholder="Search row ID or name" value={search} onChange={(event) => setSearch(event.target.value)} />
                 </div>
@@ -479,24 +481,54 @@ export function NursingAssessmentConfigurationPage() {
         </TabsContent>
         <TabsContent value="examples"><ExampleList /></TabsContent>
       </Tabs>
-      <Drawer open={Boolean(draft)} onOpenChange={(open) => !open && setDraft(null)} title={draft?.type === "Grouper" ? "Edit grouper row" : "Edit content row"}>
-        {draft ? (
-          <div className="space-y-3">
-            <Input value={draft.id} onChange={(event) => setDraft({ ...draft, id: event.target.value })} placeholder="Row ID" />
-            <Input value={draft.row} onChange={(event) => setDraft({ ...draft, row: event.target.value })} placeholder="Row name" />
-            <Input value={draft.display} onChange={(event) => setDraft({ ...draft, display: event.target.value })} placeholder="Display name" />
-            <FieldLabel label="Type" value={<select className="h-9 w-full rounded-md border border-input bg-background px-2" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as MasterRow["type"] })}><option>Grouper</option><option>Content</option></select>} />
-            {draft.type === "Content" ? (
-              <>
-                <FieldLabel label="Field type" value={<select className="h-9 w-full rounded-md border border-input bg-background px-2" value={draft.fieldType} onChange={(event) => setDraft({ ...draft, fieldType: event.target.value as NursingFieldType })}><option>Dropdown</option><option>Free text</option><option>Number</option><option>Calculated</option><option>Date and time</option></select>} />
-                <FieldLabel label="Selectable" value={<select className="h-9 w-full rounded-md border border-input bg-background px-2" value={draft.selectable} onChange={(event) => setDraft({ ...draft, selectable: event.target.value as NursingSelectable })}><option>Single</option><option>Multiple</option><option>None</option></select>} />
-                <Input value={draft.options ?? ""} onChange={(event) => setDraft({ ...draft, options: event.target.value })} placeholder="Dropdown options comma separated" />
-              </>
-            ) : null}
-            <Button className="w-full" onClick={saveDraft}>Save configuration</Button>
-          </div>
-        ) : null}
-      </Drawer>
+      <Dialog.Root open={Boolean(draft)} onOpenChange={(open) => !open && setDraft(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/35 backdrop-blur-[1px]" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[88dvh] w-[min(calc(100vw-2rem),560px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-surface shadow-soft outline-none">
+            <div className="flex items-start justify-between gap-4 border-b border-border bg-surface px-4 py-3">
+              <div>
+                <Dialog.Title className="text-sm font-semibold text-foreground">{draft?.type === "Grouper" ? "Edit grouper row" : "Edit content row"}</Dialog.Title>
+                <Dialog.Description className="mt-1 text-xs text-muted-foreground">Configure the assessment master row and save your changes.</Dialog.Description>
+              </div>
+              <Dialog.Close asChild>
+                <Button size="icon" variant="ghost" aria-label="Close modal">
+                  <X className="h-4 w-4" />
+                </Button>
+              </Dialog.Close>
+            </div>
+            <div className="max-h-[calc(88dvh-62px)] overflow-auto p-4">
+              {draft ? (
+                <div className="space-y-3">
+                  <Input value={draft.id} onChange={(event) => setDraft({ ...draft, id: event.target.value })} placeholder="Row ID" />
+                  <Input value={draft.row} onChange={(event) => setDraft({ ...draft, row: event.target.value })} placeholder="Row name" />
+                  <Input value={draft.display} onChange={(event) => setDraft({ ...draft, display: event.target.value })} placeholder="Display name" />
+                  <FieldLabel label="Type" value={<select className="h-9 w-full rounded-md border border-input bg-background px-2" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as MasterRow["type"] })}><option>Grouper</option><option>Content</option></select>} />
+                  {draft.type === "Content" ? (
+                    <>
+                      <FieldLabel label="Field type" value={<select className="h-9 w-full rounded-md border border-input bg-background px-2" value={draft.fieldType} onChange={(event) => setDraft({ ...draft, fieldType: event.target.value as NursingFieldType })}><option>Dropdown</option><option>Free text</option><option>Number</option><option>Calculated</option><option>Date and time</option></select>} />
+                      <FieldLabel label="Selectable" value={<select className="h-9 w-full rounded-md border border-input bg-background px-2" value={draft.selectable} onChange={(event) => setDraft({ ...draft, selectable: event.target.value as NursingSelectable })}><option>Single</option><option>Multiple</option><option>None</option></select>} />
+                      <Input value={draft.options ?? ""} onChange={(event) => setDraft({ ...draft, options: event.target.value })} placeholder="Dropdown options comma separated" />
+                    </>
+                  ) : null}
+                  {rows.some((row) => row.id === draft.id) ? (
+                    <div className="rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+                      <div className="font-semibold">Delete this configuration?</div>
+                      <p className="mt-1 text-xs text-danger-foreground">This will permanently remove the selected assessment row or grouper.</p>
+                      <Button size="sm" variant="danger" onClick={() => {
+                        setRows((current) => current.filter((row) => row.id !== draft.id));
+                        setDraft(null);
+                      }}>
+                        Delete configuration
+                      </Button>
+                    </div>
+                  ) : null}
+                  <Button className="w-full" onClick={saveDraft}>Save configuration</Button>
+                </div>
+              ) : null}
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </NursingShell>
   );
 }
