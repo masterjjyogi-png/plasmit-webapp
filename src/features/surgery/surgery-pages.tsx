@@ -48,7 +48,7 @@ const surgeryStorageEvent = "plasmit-surgery-storage-change";
 const surgeryStorageCache = new Map<string, { raw: string | null; value: unknown }>();
 
 function normalizeFilterValue(value: string) {
-  return value.toLowerCase().replace(/\s+/g, "");
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 function searchMatches(value: string, query: string) {

@@ -12,20 +12,33 @@ type RoleContextValue = {
 };
 
 const RoleContext = React.createContext<RoleContextValue | null>(null);
+const defaultRole: Role = "Hospital Admin";
+const roleStorageKey = "plasmit-role";
+const roleChangeEvent = "plasmit-role-change";
 
 function readSavedRole(): Role {
-  if (typeof window === "undefined") return "Hospital Admin";
-  const saved = window.localStorage.getItem("plasmit-role");
-  return saved && roles.includes(saved as Role) ? (saved as Role) : "Hospital Admin";
+  if (typeof window === "undefined") return defaultRole;
+  const saved = window.localStorage.getItem(roleStorageKey);
+  return saved && roles.includes(saved as Role) ? (saved as Role) : defaultRole;
+}
+
+function subscribeRole(callback: () => void) {
+  if (typeof window === "undefined") return () => undefined;
+  window.addEventListener("storage", callback);
+  window.addEventListener(roleChangeEvent, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(roleChangeEvent, callback);
+  };
 }
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRoleState] = React.useState<Role>(readSavedRole);
+  const role = React.useSyncExternalStore(subscribeRole, readSavedRole, () => defaultRole);
 
   const setRole = React.useCallback((nextRole: Role) => {
-    setRoleState(nextRole);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("plasmit-role", nextRole);
+      window.localStorage.setItem(roleStorageKey, nextRole);
+      window.dispatchEvent(new Event(roleChangeEvent));
     }
   }, []);
 
