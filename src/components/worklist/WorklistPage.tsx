@@ -18,6 +18,7 @@ import {
   toTimeInputValue,
   validateTaskForm,
 } from "@/components/worklist/worklist-utils";
+import { isLinkedCarePlanTask, readLinkedWorklistTasks, replaceLinkedWorklistTask, subscribeToLinkedWorklistTasks } from "@/components/worklist/worklist-storage";
 import { NursingPatientStrip, NursingShell } from "@/features/nursing/nursing-shared";
 import type { TaskCategory, TaskFrequency, TaskPriority, WorklistTask, WorklistTaskForm, WorklistTaskFormErrors } from "@/types/worklist";
 
@@ -125,7 +126,7 @@ export function WorklistPage() {
   const today = React.useMemo(() => toDateInputValue(new Date()), []);
   const [fromDate, setFromDate] = React.useState(today);
   const [toDate, setToDate] = React.useState(today);
-  const [tasks, setTasks] = React.useState<WorklistTask[]>(() => createInitialTasks());
+  const [tasks, setTasks] = React.useState<WorklistTask[]>(() => [...createInitialTasks(), ...readLinkedWorklistTasks()]);
   const [taskForm, setTaskForm] = React.useState<WorklistTaskForm>(() => defaultTaskForm());
   const [taskFormErrors, setTaskFormErrors] = React.useState<WorklistTaskFormErrors>({});
   const [formMode, setFormMode] = React.useState<"add" | "edit" | null>(null);
@@ -145,6 +146,23 @@ export function WorklistPage() {
   const [continueErrors, setContinueErrors] = React.useState<ContinueTaskErrors>({});
 
   const dateRangeError = fromDate && toDate && fromDate > toDate ? "From Date cannot be greater than To Date." : "";
+
+  React.useEffect(() => {
+    const syncLinkedTasks = () => {
+      const linkedTasks = readLinkedWorklistTasks();
+      setTasks((current) => [...current.filter((task) => !isLinkedCarePlanTask(task)), ...linkedTasks]);
+    };
+    syncLinkedTasks();
+    return subscribeToLinkedWorklistTasks(syncLinkedTasks);
+  }, []);
+
+  function updateTasks(update: (current: WorklistTask[]) => WorklistTask[]) {
+    setTasks((current) => {
+      const next = update(current);
+      next.filter(isLinkedCarePlanTask).forEach(replaceLinkedWorklistTask);
+      return next;
+    });
+  }
 
   function handleDateFilterChange(field: "fromDate" | "toDate", value: string) {
     if (field === "fromDate") setFromDate(value);
@@ -185,12 +203,12 @@ export function WorklistPage() {
         reason: "",
         source: "Manual",
       };
-      setTasks((current) => [...current, nextTask]);
+      updateTasks((current) => [...current, nextTask]);
     }
 
     if (formMode === "edit" && editingTaskId) {
       // Backend integration note: editing a repeating task should update only future pending occurrences and should not modify already completed occurrences.
-      setTasks((current) => current.map((task) => task.id === editingTaskId ? {
+      updateTasks((current) => current.map((task) => task.id === editingTaskId ? {
         ...task,
         taskName: taskForm.taskName.trim(),
         category: taskForm.category,
@@ -213,7 +231,7 @@ export function WorklistPage() {
 
   function markComplete() {
     if (!completeTarget) return;
-    setTasks((current) => current.map((task) => task.id === completeTarget.id ? { ...task, status: "Completed", reason: "" } : task));
+    updateTasks((current) => current.map((task) => task.id === completeTarget.id ? { ...task, status: "Completed", reason: "" } : task));
     setCompleteTarget(null);
   }
 
@@ -230,7 +248,7 @@ export function WorklistPage() {
       setReasonError("Reason for skip is required.");
       return;
     }
-    setTasks((current) => current.map((task) => task.id === skipTarget.id ? { ...task, status: "Skipped", reason: cleanReason } : task));
+    updateTasks((current) => current.map((task) => task.id === skipTarget.id ? { ...task, status: "Skipped", reason: cleanReason } : task));
     setSkipTarget(null);
     setReason("");
   }
@@ -248,7 +266,7 @@ export function WorklistPage() {
       setReasonError("Reason for discontinuing is required.");
       return;
     }
-    setTasks((current) => current.map((task) => task.id === discontinueTarget.id ? {
+    updateTasks((current) => current.map((task) => task.id === discontinueTarget.id ? {
       ...task,
       status: "Discontinued",
       reason: cleanReason,
@@ -280,7 +298,7 @@ export function WorklistPage() {
 
     const continuedTask: WorklistTask = {
       ...continueTarget,
-      id: `continued-${Date.now()}`,
+      id: isLinkedCarePlanTask(continueTarget) ? continueTarget.id : `continued-${Date.now()}`,
       startDate: continueForm.startDate,
       startTime: continueForm.startTime,
       endDate: "",
@@ -292,7 +310,7 @@ export function WorklistPage() {
       source: continueTarget.source ?? "Manual",
     };
     // Backend integration note: real systems may keep the discontinued record as immutable history while creating this new active occurrence.
-    setTasks((current) => [...current.filter((task) => task.id !== continueTarget.id), continuedTask]);
+    updateTasks((current) => [...current.filter((task) => task.id !== continueTarget.id), continuedTask]);
     setContinueTarget(null);
   }
 

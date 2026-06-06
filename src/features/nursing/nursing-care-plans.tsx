@@ -7,6 +7,7 @@ import { Check, ChevronDown, Edit3, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { createCarePlanWorklistTaskId, upsertCarePlanWorklistTask } from "@/components/worklist/worklist-storage";
 import { cn } from "@/lib/utils";
 import { NursingPatientStrip, NursingShell } from "@/features/nursing/nursing-shared";
 
@@ -46,7 +47,9 @@ type WorklistDetails = {
   priority: string;
   frequency: string;
   startDate: string;
+  endDate: string;
   startTime: string;
+  endTime: string;
   notes: string;
 };
 
@@ -163,7 +166,9 @@ function createWorklistDetails(taskName: string): WorklistDetails {
     priority: "Routine",
     frequency: "",
     startDate: "",
+    endDate: "",
     startTime: "",
+    endTime: "",
     notes: "",
   };
 }
@@ -1020,6 +1025,14 @@ function WorklistModal({
               }}
             />
           </label>
+          <label className="text-xs font-semibold">
+            End date
+            <Input className="mt-1" type="date" value={target.endDate} onChange={(event) => onTargetChange({ endDate: event.target.value })} />
+          </label>
+          <label className="text-xs font-semibold">
+            End time
+            <Input className="mt-1" type="time" value={target.endTime} onChange={(event) => onTargetChange({ endTime: event.target.value })} />
+          </label>
           <label className="text-xs font-semibold sm:col-span-2">
             Order / notes
             <textarea
@@ -1057,6 +1070,8 @@ function WorklistDetailsModal({
           <div className="rounded-md border border-border p-2 text-sm"><b>Frequency</b><br />{target.details.frequency}</div>
           <div className="rounded-md border border-border p-2 text-sm"><b>Start date</b><br />{target.details.startDate || "-"}</div>
           <div className="rounded-md border border-border p-2 text-sm"><b>Start time</b><br />{target.details.startTime || "-"}</div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>End date</b><br />{target.details.endDate || "-"}</div>
+          <div className="rounded-md border border-border p-2 text-sm"><b>End time</b><br />{target.details.endTime || "-"}</div>
           <div className="rounded-md border border-border p-2 text-sm sm:col-span-2"><b>Order / notes</b><br />{target.details.notes || "-"}</div>
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="outline" onClick={() => onEdit(target)}>Edit</Button>
@@ -2222,9 +2237,21 @@ export function NursingCarePlansPage() {
       priority: target.priority,
       frequency: target.frequency,
       startDate: target.startDate,
+      endDate: target.endDate,
       startTime: target.startTime,
+      endTime: target.endTime,
       notes: target.notes,
     };
+    upsertCarePlanWorklistTask({
+      id: createCarePlanWorklistTaskId(target),
+      taskName: details.taskName,
+      priority: details.priority,
+      startDate: details.startDate,
+      startTime: details.startTime,
+      endDate: details.endDate,
+      frequency: details.frequency,
+      comments: details.notes,
+    });
     updatePlan(target.planId, (plan) => ({
       ...plan,
       problems: plan.problems.map((problem) => problem.id === target.problemId ? {
