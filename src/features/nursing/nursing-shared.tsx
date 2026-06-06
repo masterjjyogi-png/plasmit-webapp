@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, LayoutDashboard, LockKeyhole, Settings, UserRoundCheck } from "lucide-react";
+import { ClipboardCheck, ClipboardList, LayoutDashboard, LockKeyhole, Settings, UserRoundCheck } from "lucide-react";
 
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
@@ -60,6 +60,7 @@ export function NursingShell({
 
   const buttonLinks = [
     { href: "/nurse", label: "Dashboard", active: pathname === "/nurse", icon: LayoutDashboard },
+    { href: "/worklist", label: "Worklist", active: pathname === "/worklist", icon: ClipboardList },
     { href: "/nurse/assessments", label: "Assessment", active: pathname === "/nurse/assessments", icon: ClipboardCheck },
     {
       href: "/nurse/assessments/configuration",
@@ -68,12 +69,6 @@ export function NursingShell({
       icon: Settings,
     },
     { href: "/nurse/care-plans", label: "Care plan", active: pathname === "/nurse/care-plans", icon: UserRoundCheck },
-    {
-      href: "/nurse/care-plans/configuration",
-      label: "Care plan configuration",
-      active: pathname === "/nurse/care-plans/configuration",
-      icon: Settings,
-    },
   ];
 
   const defaultActions = (
@@ -118,9 +113,9 @@ export function NursingQuickNav() {
   const pathname = usePathname();
   const items = [
     { label: "Assessments", href: "/nurse/assessments", icon: ClipboardCheck },
+    { label: "Worklist", href: "/worklist", icon: ClipboardList },
     { label: "Assessment configuration", href: "/nurse/assessments/configuration", icon: Settings },
     { label: "Care plans", href: "/nurse/care-plans", icon: UserRoundCheck },
-    { label: "Care plan configuration", href: "/nurse/care-plans/configuration", icon: Settings },
   ];
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">

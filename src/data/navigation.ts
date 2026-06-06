@@ -1,6 +1,7 @@
 import {
   Archive,
   Bell,
+  ClipboardList,
   LayoutDashboard,
   Scissors,
   UserRoundCheck,
@@ -31,6 +32,7 @@ export const navigationItems: NavigationItem[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, route: "/dashboard", group: "Command", allowedRoles: allRoles, status: "ready" },
   { id: "search", label: "Global Search", icon: Search, route: "/search", group: "Command", allowedRoles: allRoles, status: "ready" },
   { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications", group: "Command", allowedRoles: allRoles, status: "ready" },
+  { id: "worklist", label: "Worklist", icon: ClipboardList, route: "/worklist", group: "Nursing", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"], status: "ready" },
   { id: "radiology", label: "Radiology", icon: ScanSearch, route: "/radiology", group: "Radiology", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Radiologist", "Billing Executive", "Management"], status: "ready" },
   { id: "nurse", label: "Nurse", icon: UserRoundCheck, route: "/nurse", group: "Nursing", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Management"], status: "ready" },
   { id: "surgery", label: "Surgery", icon: Scissors, route: "/surgery", group: "Surgery", allowedRoles: ["Super Admin", "Hospital Admin", "Doctor", "Nurse", "Receptionist", "Management"], status: "ready" },
