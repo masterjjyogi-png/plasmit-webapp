@@ -65,7 +65,7 @@ export function subscribeToLinkedWorklistTasks(callback: () => void) {
 
 export function replaceLinkedWorklistTask(task: WorklistTask) {
   const current = readLinkedWorklistTasks();
-  writeLinkedWorklistTasks(current.map((item) => (item.id === task.id ? task : item)));
+  writeLinkedWorklistTasks(current.some((item) => item.id === task.id) ? current.map((item) => (item.id === task.id ? task : item)) : [...current, task]);
 }
 
 export function upsertCarePlanWorklistTask({
