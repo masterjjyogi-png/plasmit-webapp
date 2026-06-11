@@ -4,10 +4,11 @@ export type TaskCategory =
   | "Activity"
   | "Care Plans"
   | "Medication"
-  | "Assessment"
+  | "Assessments"
   | "Procedure"
   | "POCT"
-  | "Diet"
+  | "Feeding"
+  | "Patient Requests"
   | "Other";
 
 export type TaskFrequency =
@@ -15,8 +16,14 @@ export type TaskFrequency =
   | "BID"
   | "TID"
   | "QID"
-  | "Hourly"
-  | "As Needed";
+  | "Every hour"
+  | "Every 2 hours"
+  | "Every 3 hours"
+  | "Every 4 hours"
+  | "Every 5 hours"
+  | "Every 6 hours"
+  | "Every 9 hours"
+  | "Every 12 hours";
 
 export type TaskStatus = "Active" | "Completed" | "Skipped" | "Discontinued";
 
@@ -54,14 +61,28 @@ export type WorklistTaskFormErrors = Partial<Record<keyof WorklistTaskForm, stri
 export const taskCategories: TaskCategory[] = [
   "Activity",
   "Care Plans",
-  "Medication",
-  "Assessment",
-  "Procedure",
+  "Assessments",
   "POCT",
-  "Diet",
+  "Procedure",
+  "Feeding",
+  "Medication",
+  "Patient Requests",
   "Other",
 ];
 
 export const taskPriorities: TaskPriority[] = ["High", "Moderate", "Routine"];
 
-export const taskFrequencies: TaskFrequency[] = ["Once a day", "BID", "TID", "QID", "Hourly", "As Needed"];
+export const taskFrequencies: TaskFrequency[] = [
+  "Once a day",
+  "BID",
+  "TID",
+  "QID",
+  "Every hour",
+  "Every 2 hours",
+  "Every 3 hours",
+  "Every 4 hours",
+  "Every 5 hours",
+  "Every 6 hours",
+  "Every 9 hours",
+  "Every 12 hours",
+];

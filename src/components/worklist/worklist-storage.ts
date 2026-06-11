@@ -31,8 +31,18 @@ function normalizePriority(priority: string): TaskPriority {
 
 function normalizeFrequency(frequency: string): TaskFrequency {
   if (/once/i.test(frequency)) return "Once a day";
-  if (/hour/i.test(frequency)) return "Hourly";
-  return "As Needed";
+  if (/12\s*hours?/i.test(frequency)) return "Every 12 hours";
+  if (/9\s*hours?/i.test(frequency)) return "Every 9 hours";
+  if (/6\s*hours?/i.test(frequency)) return "Every 6 hours";
+  if (/5\s*hours?/i.test(frequency)) return "Every 5 hours";
+  if (/4\s*hours?/i.test(frequency)) return "Every 4 hours";
+  if (/3\s*hours?/i.test(frequency)) return "Every 3 hours";
+  if (/2\s*hours?/i.test(frequency)) return "Every 2 hours";
+  if (/hour/i.test(frequency)) return "Every hour";
+  if (/bid/i.test(frequency)) return "BID";
+  if (/tid/i.test(frequency)) return "TID";
+  if (/qid/i.test(frequency)) return "QID";
+  return "Once a day";
 }
 
 export function readLinkedWorklistTasks(): WorklistTask[] {

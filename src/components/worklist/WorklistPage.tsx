@@ -44,7 +44,7 @@ function createInitialTasks(): WorklistTask[] {
     {
       id: "1",
       taskName: "Capture Vitals",
-      category: "Assessment",
+      category: "Assessments",
       priority: "Moderate",
       startDate: today,
       startTime: toTimeInputValue(olderRoutine),
@@ -53,7 +53,7 @@ function createInitialTasks(): WorklistTask[] {
       comments: "",
       status: "Active",
       reason: "",
-      source: "Assessment",
+      source: "Assessments",
     },
     {
       id: "2",
@@ -124,6 +124,7 @@ function isValidCompletedForm(form: WorklistTaskForm): form is WorklistTaskForm 
 
 export function WorklistPage() {
   const today = React.useMemo(() => toDateInputValue(new Date()), []);
+  const [now, setNow] = React.useState(() => new Date());
   const [fromDate, setFromDate] = React.useState(today);
   const [toDate, setToDate] = React.useState(today);
   const [tasks, setTasks] = React.useState<WorklistTask[]>(() => [...createInitialTasks(), ...readLinkedWorklistTasks()]);
@@ -146,6 +147,11 @@ export function WorklistPage() {
   const [continueErrors, setContinueErrors] = React.useState<ContinueTaskErrors>({});
 
   const dateRangeError = fromDate && toDate && fromDate > toDate ? "From Date cannot be greater than To Date." : "";
+
+  React.useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   React.useEffect(() => {
     const syncLinkedTasks = () => {
@@ -326,7 +332,7 @@ export function WorklistPage() {
     <NursingShell title="Worklist" description="Nursing task worklist with date filtering, grouped active tasks, overdue rules, and discontinuation workflows.">
       <NursingPatientStrip />
       <WorklistHeader fromDate={fromDate} toDate={toDate} error={dateRangeError} onAddTask={handleAddTask} onDateFilterChange={handleDateFilterChange} />
-      <ActiveTasksSection groups={activeGroups} onEdit={handleEditTask} onComplete={handleCompleteTask} onSkip={handleSkipTask} onDiscontinue={handleDiscontinueTask} />
+      <ActiveTasksSection groups={activeGroups} now={now} onEdit={handleEditTask} onComplete={handleCompleteTask} onSkip={handleSkipTask} onDiscontinue={handleDiscontinueTask} />
       <DiscontinuedTasksSection tasks={discontinuedTasks} onContinue={handleContinueTask} />
 
       {formMode ? (
