@@ -14,6 +14,9 @@ export type AssessmentRow = {
   commentBox?: boolean;
   intake?: boolean;
   output?: boolean;
+  cascadeParentId?: string;
+  cascadeValue?: string;
+  cascadeRules?: { parentId: string; value: string }[];
 };
 
 export type AssessmentGroup = {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, ClipboardList, LayoutDashboard, LockKeyhole, Settings, UserRoundCheck } from "lucide-react";
+import { ClipboardCheck, ClipboardList, Droplets, LayoutDashboard, LockKeyhole, Settings, UserRoundCheck } from "lucide-react";
 
 import { useRole } from "@/components/providers/role-provider";
 import { AlertBanner } from "@/components/ui/alert-banner";
@@ -62,6 +62,7 @@ export function NursingShell({
     { href: "/nurse", label: "Dashboard", active: pathname === "/nurse", icon: LayoutDashboard },
     { href: "/worklist", label: "Worklist", active: pathname === "/worklist", icon: ClipboardList },
     { href: "/nurse/assessments", label: "Assessment", active: pathname === "/nurse/assessments", icon: ClipboardCheck },
+    { href: "/nurse/intake-output", label: "Intake/Output", active: pathname === "/nurse/intake-output", icon: Droplets },
     {
       href: "/nurse/assessments/configuration",
       label: "Assessment configuration",
@@ -114,6 +115,7 @@ export function NursingQuickNav() {
   const items = [
     { label: "Assessments", href: "/nurse/assessments", icon: ClipboardCheck },
     { label: "Worklist", href: "/worklist", icon: ClipboardList },
+    { label: "Intake/Output", href: "/nurse/intake-output", icon: Droplets },
     { label: "Assessment configuration", href: "/nurse/assessments/configuration", icon: Settings },
     { label: "Care plans", href: "/nurse/care-plans", icon: UserRoundCheck },
   ];
