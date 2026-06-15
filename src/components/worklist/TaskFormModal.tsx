@@ -9,6 +9,23 @@ function FieldError({ message }: { message?: string }) {
   return message ? <div className="mt-1 text-xs font-medium text-danger">{message}</div> : null;
 }
 
+const taskNameOptions = [
+  "Capture Vitals",
+  "Administer Medication",
+  "Turn and Reposition",
+  "Supine Position",
+  "Semi-Fowler's Position",
+  "High Fowler's Position",
+  "Sitting Position",
+  "Orthopneic Position",
+  "Prone Position",
+  "Lateral Position",
+  "Recovery Position",
+  "Trendelenburg Position",
+  "Reverse Trendelenburg Position",
+  "Medicine Frequency Dropdown",
+];
+
 export function TaskFormModal({
   mode,
   form,
@@ -29,7 +46,10 @@ export function TaskFormModal({
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-xs font-semibold text-foreground">
           Task Name
-          <Input className="mt-1" value={form.taskName} onChange={(event) => onChange({ taskName: event.target.value })} />
+          <Input className="mt-1" list="worklist-task-name-options" value={form.taskName} onChange={(event) => onChange({ taskName: event.target.value })} />
+          <datalist id="worklist-task-name-options">
+            {taskNameOptions.map((taskName) => <option key={taskName} value={taskName} />)}
+          </datalist>
           <FieldError message={errors.taskName} />
         </label>
         <label className="text-xs font-semibold text-foreground">

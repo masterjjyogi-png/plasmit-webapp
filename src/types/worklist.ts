@@ -23,7 +23,10 @@ export type TaskFrequency =
   | "Every 5 hours"
   | "Every 6 hours"
   | "Every 9 hours"
-  | "Every 12 hours";
+  | "Every 12 hours"
+  | "HS - At Bedtime"
+  | "SOS - When Required"
+  | "STAT - Immediately";
 
 export type TaskStatus = "Active" | "Completed" | "Skipped" | "Discontinued";
 
@@ -85,4 +88,7 @@ export const taskFrequencies: TaskFrequency[] = [
   "Every 6 hours",
   "Every 9 hours",
   "Every 12 hours",
+  "HS - At Bedtime",
+  "SOS - When Required",
+  "STAT - Immediately",
 ];
